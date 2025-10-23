@@ -1,5 +1,6 @@
 from rest_framework import viewsets, status, filters
 from .models import Account
+from .permissions import IsOwnerOrStaff
 from rest_framework.response import Response 
 from .serializers import AccountListSerializer, AccountDetailSerializer, AccountCreateSerializer
 from rest_framework.permissions import IsAuthenticated
@@ -11,7 +12,7 @@ from django.db import transaction
 # Create your views here.
 class AccountViewSet(viewsets.ModelViewSet):
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsOwnerOrStaff]
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['account_number', 'account_type', 'status']
     odering_fields = ['lastactivitydate', 'account_number']
