@@ -46,11 +46,26 @@ class AccountListSerializer(serializers.ModelSerializer):
     
 class BalanceSerializer(serializers.ModelSerializer):
 
+    account_number = serializers.CharField(source = 'account.account_number', read_only=True)
+
+    account_owner = serializers.CharField(source = 'account.owner.username', read_only=True)
+
     class Meta:
 
         model = Balance
 
-        fields = ['current_balance', 'available_balance']
+        fields = [
+
+            'id',
+            'account_number',
+            'account_owner',
+            'current_balance', 
+            'available_balance',
+            'last_updated'
+
+              ]
+        
+        read_only_fields = ['last_updated']
 
 class AccountDetailSerializer(serializers.ModelSerializer):
 

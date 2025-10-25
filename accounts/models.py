@@ -1,7 +1,9 @@
-from django.db import models
+from django.db import models, transaction
 #from django.contrib.auth import get_user_model
 from .managers import  AccountManager
+from django.core.exceptions import ValidationError
 from django.conf import settings
+from decimal import Decimal
 
 # Create your models here.
 class Account(models.Model):
@@ -91,14 +93,53 @@ class Balance(models.Model):
     available_balance = models.DecimalField(max_digits=12, decimal_places=2)
     last_updated = models.DateTimeField(auto_now=True)
 
+    MIN_BALANCE = Decimal('100.00')
+
+    def __str__(self):
+        return f"{self.account.account_number} - {self.current_balance}"
+
     def calculate_summary(self):
-        pass
+        
+        return {
 
-    def can_debit(self):
-        pass
+            "current_balance": self.current_balance,
+            "available_balance":self.available_balance,
+            "last_updated":self.last_updated 
 
-    def debit(self):
-        pass
+        }
 
-    def credit(self):
-        pass
+    def can_debit(self, amount:Decimal) -> bool:
+        
+        if amount <= 0:
+             
+            raise ValidationError("Debit amount must be greater than zero")
+
+        if  self.available_balance - amount < self.MIN_BALANCE:
+
+            return False
+        
+        return True
+    
+    @transaction.atomic()
+    def debit(self, amount:Decimal) -> None:
+        
+        if not self.can_debit(amount):
+
+            raise ValidationError("Insufficient funds for this debit")
+        
+        self.current_balance -= amount
+
+        self.available_balance -= amount
+
+        self.save()
+
+    @transaction.atomic()
+    def credit(self, amount:Decimal) -> None:
+        
+        if amount <= 0:
+
+            raise ValidationError("credit amount must be greater than zero")
+
+        self.current_balance += amount
+
+        self.available_balance += amount
